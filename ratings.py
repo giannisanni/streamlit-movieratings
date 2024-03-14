@@ -5,7 +5,7 @@ import json
 import pandas as pd
 
 
-st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="💰")
+st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬", layout="wide")
 
 # Initialize 'show_data' in session state if it's not already present
 if 'show_data' not in st.session_state:
@@ -82,10 +82,10 @@ def main():
                 color = get_color(rating)
                 emoji = emojis[index] if index < 20 else ""  # Adjust to limit emojis to top 20
 
-                col1, col2 = st.columns([0.1, 1], gap="small")
-                with col1:
-                    imdb_button = st.button("🔍", key=f"imdb_{index}")
+                col1, col2 = st.columns([1, 0.1], gap="small")
                 with col2:
+                    imdb_button = st.button("ℹ️", key=f"imdb_{index}")
+                with col1:
                     st.markdown(f"{emoji} **{film}** with a rating of <span style='color: {color};'>{formatted_rating}</span>", unsafe_allow_html=True)
 
                 if imdb_button:
@@ -93,11 +93,15 @@ def main():
                     if "error" not in movie_info:
                         # Display movie name, year, IMDb rating, IMDb link, and poster
                         # Adjust for 'year' and 'imdb_rating' once they are correctly fetched
-                        st.write(f"**{movie_info.get('name', 'N/A')}**")
-                        st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
-                        st.image(movie_info.get('poster', ''), width=100)
+                        col1, col2, col3 = st.columns([1, 1, 1])  # Three equal-width columns
+                        with col2:
+                            st.write(f"**{movie_info.get('name', 'N/A')}**")
+                            st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
+                        with col1:
+                            st.image(movie_info.get('poster', ''), width=100)
                     else:
                         st.error(movie_info["error"])
+
 
         else:
             st.write("DataFrame is empty.")
@@ -105,5 +109,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
