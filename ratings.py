@@ -58,6 +58,7 @@ def main():
         <h1 style='text-align: center;'>
             <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
         </h1>
+        <br>
     """, unsafe_allow_html=True)
 
     with st.container():
