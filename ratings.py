@@ -9,7 +9,6 @@ st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="�
 if 'show_data' not in st.session_state:
     st.session_state['show_data'] = False
 
-
 def load_movie_ratings():
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(worksheet="Ranglijst", ttl=0)
@@ -26,7 +25,6 @@ def get_color(rating):
     else:
         color = "#FF0000"
     return color
-
 
 def fetch_imdb_info(title):
     imdb = IMDB()
@@ -52,62 +50,68 @@ def fetch_imdb_info(title):
 
 
 def main():
-    #st.title("InVivid Movie Ratings Leaderboard")
-    # Use markdown to create a prominently styled link at the top of the page
-    st.markdown("""
-        <h1 style='text-align: center;'>
-            <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
-        </h1>
-        <br>
-    """, unsafe_allow_html=True)
+    st.sidebar.header("Navigation")
+    #page = st.sidebar.radio("Choose an option", ["Movie Ratings Leaderboard", "Select User"])
 
-    with st.container():
+    if  "Movie Ratings Leaderboard":
+        # Sidebar search functionality for the Movie Ratings Leaderboard
+        search_query = st.sidebar.text_input("Enter movie name", "")
+
+        st.markdown("""
+            <h1 style='text-align: center;'>
+                <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
+            </h1>
+            <br>
+        """, unsafe_allow_html=True)
+
         df = load_movie_ratings()
+
+        # Filter the dataframe based on the search query
+        if search_query:
+            df = df[df['Films van hoog naar laag beoordeeld'].str.contains(search_query, case=False, na=False)]
+
         df = df.dropna(subset=['Films van hoog naar laag beoordeeld', 'Rating'])
 
         if not df.empty:
-            for index, row in df.iterrows():
-                film = row['Films van hoog naar laag beoordeeld']
-                rating = row['Rating']
-                formatted_rating = f"{rating:.2f}"
-                color = get_color(rating)
+            with st.container():
+                for index, row in df.iterrows():
+                    film = row['Films van hoog naar laag beoordeeld']
+                    rating = row['Rating']
+                    formatted_rating = f"{rating:.2f}"
+                    color = get_color(rating)
 
-                # Define emoji or ranking display based on index
-                if index < 3:  # Top 3 have their own emojis and no number
-                    ranking_display = ["🏆", "🥈", "🥉"][index]
-                elif index < 10:  # Ranks 4-20 get a star emoji
-                    ranking_display = f"{index + 1}. 🌟"
-                else:  # Beyond rank 20, just show the number
-                    ranking_display = f"{index + 1}."
-
-                col1, col2 = st.columns([1, 0.1], gap="small")
-                with col2:
-                    imdb_button = st.button("ℹ️", key=f"imdb_{index}")
-                with col1:
-                    st.markdown(
-                        f"{ranking_display} **{film}** with a rating of <span style='color: {color};'>{formatted_rating}</span>",
-                        unsafe_allow_html=True)
-
-                if imdb_button:
-                    movie_info = fetch_imdb_info(film)
-                    if "error" not in movie_info:
-                        col1, col2, col3 = st.columns([1, 1, 1])
-                        with col2:
-                            st.write(f"**{movie_info.get('name', 'N/A')}**")
-                            st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
-                        with col1:
-                            st.image(movie_info.get('poster', ''), width=100)
+                    if index < 3:
+                        ranking_display = ["🏆", "🥈", "🥉"][index]
+                    elif index < 20:
+                        ranking_display = f"{index + 1}. 🌟"
                     else:
-                        st.error(movie_info["error"])
+                        ranking_display = f"{index + 1}."
 
+                    col1, col2 = st.columns([1, 0.1], gap="small")
+                    with col2:
+                        imdb_button = st.button("ℹ️", key=f"imdb_{index}")
+                    with col1:
+                        st.markdown(
+                            f"{ranking_display} **{film}** with a rating of <span style='color: {color};'>{formatted_rating}</span>",
+                            unsafe_allow_html=True)
+
+                    if imdb_button:
+                        movie_info = fetch_imdb_info(film)
+                        if "error" not in movie_info:
+                            col1, col2, col3 = st.columns([1, 1, 1])
+                            with col2:
+                                st.write(f"**{movie_info.get('name', 'N/A')}**")
+                                st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
+                            with col1:
+                                st.image(movie_info.get('poster', ''), width=100)
+                        else:
+                            st.error(movie_info["error"])
         else:
-            st.write("DataFrame is empty.")
+            st.write("No movies found or DataFrame is empty.")
 
 
 if __name__ == "__main__":
     main()
-
-
 
 
 
