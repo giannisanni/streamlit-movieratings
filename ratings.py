@@ -5,7 +5,7 @@ import json
 import pandas as pd
 
 
-st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬")
 
 # Initialize 'show_data' in session state if it's not already present
 if 'show_data' not in st.session_state:
