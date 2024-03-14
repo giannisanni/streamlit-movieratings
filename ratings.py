@@ -52,7 +52,13 @@ def fetch_imdb_info(title):
 
 
 def main():
-    st.title("InVivid Movie Ratings Leaderboard")
+    #st.title("InVivid Movie Ratings Leaderboard")
+    # Use markdown to create a prominently styled link at the top of the page
+    st.markdown("""
+        <h1 style='text-align: center;'>
+            <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
+        </h1>
+    """, unsafe_allow_html=True)
 
     with st.container():
         df = load_movie_ratings()
