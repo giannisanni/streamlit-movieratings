@@ -43,10 +43,15 @@ def fetch_imdb_info(title):
             # Extract year from the title
             match = re.search(r'\b(\d{4})\b', first_result.get('name', ''))
             year = match.group(1) if match else None
-            # Return movie info along with extracted year
+            # Assuming the format is "Title Year Cast", split the string
+            parts = first_result.get('name', '').split(str(year))
+            title = parts[0].strip() if parts else 'N/A'
+            cast = parts[1].strip() if len(parts) > 1 else 'N/A'
+            # Return movie info along with extracted year and cast
             return {
-                "name": first_result.get('name', 'N/A').split(str(year))[0].strip(),  # Assuming year is always present
+                "name": title,
                 "year": year,
+                "cast": cast,
                 "url": first_result.get('url', 'N/A'),
                 "poster": first_result.get('poster', 'N/A')
             }
@@ -106,17 +111,26 @@ def main():
                         if "error" not in movie_info:
                             col1, col2, col3 = st.columns([1, 1, 1])
                             with col2:
+                                # Display the name, year, and cast
                                 st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
-                                st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
+                                st.write(f"Cast: {movie_info.get('cast', 'N/A')}")
+
+                                # Normalize the movie name and generate the movie link URL
                                 movie_name_normalized = urllib.parse.quote(
-                                    movie_info.get('name', 'N/A').lower().replace(" ", "-"))
+                                    movie_info.get('name').lower().replace(" ", "-"))
                                 release_year = movie_info.get('year', '')
                                 movie_link_url = f"https://en.yts-official.org/movies/{movie_name_normalized}-{release_year}" if release_year else f"https://en.yts-official.org/movies/{movie_name_normalized}"
-                                st.markdown(f"[Movie Link]({movie_link_url})", unsafe_allow_html=True)
+
+                                # Use markdown to display IMDb and Watch Movie links side by side
+                                links_markdown = f"[IMDb URL]({movie_info.get('url', 'N/A')}) ‧ [Watch Movie]({movie_link_url})"
+                                st.markdown(links_markdown, unsafe_allow_html=True)
+
                             with col1:
                                 st.image(movie_info.get('poster', ''), width=100)
                         else:
                             st.error(movie_info["error"])
+
+
 if __name__ == "__main__":
     main()
 
