@@ -3,6 +3,8 @@ from streamlit_gsheets import GSheetsConnection
 from PyMovieDb import IMDB
 import json
 import pandas as pd
+import urllib.parse
+import re  # Import regular expressions
 
 st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬")
 
@@ -38,8 +40,13 @@ def fetch_imdb_info(title):
         search_results = results.get("results", [])
         if result_count > 0 and search_results:
             first_result = search_results[0]
+            # Extract year from the title
+            match = re.search(r'\b(\d{4})\b', first_result.get('name', ''))
+            year = match.group(1) if match else None
+            # Return movie info along with extracted year
             return {
-                "name": first_result.get('name', 'N/A'),
+                "name": first_result.get('name', 'N/A').split(str(year))[0].strip(),  # Assuming year is always present
+                "year": year,
                 "url": first_result.get('url', 'N/A'),
                 "poster": first_result.get('poster', 'N/A')
             }
@@ -47,7 +54,6 @@ def fetch_imdb_info(title):
             return {"error": "No results found or results list is empty."}
     except Exception as e:
         return {"error": f"Error fetching IMDb info: {e}"}
-
 
 def main():
     st.sidebar.header("Navigation")
@@ -100,16 +106,17 @@ def main():
                         if "error" not in movie_info:
                             col1, col2, col3 = st.columns([1, 1, 1])
                             with col2:
-                                st.write(f"**{movie_info.get('name', 'N/A')}**")
+                                st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
                                 st.markdown(f"[IMDb URL]({movie_info.get('url', 'N/A')})", unsafe_allow_html=True)
+                                movie_name_normalized = urllib.parse.quote(
+                                    movie_info.get('name', 'N/A').lower().replace(" ", "-"))
+                                release_year = movie_info.get('year', '')
+                                movie_link_url = f"https://en.yts-official.org/movies/{movie_name_normalized}-{release_year}" if release_year else f"https://en.yts-official.org/movies/{movie_name_normalized}"
+                                st.markdown(f"[Movie Link]({movie_link_url})", unsafe_allow_html=True)
                             with col1:
                                 st.image(movie_info.get('poster', ''), width=100)
                         else:
                             st.error(movie_info["error"])
-        else:
-            st.write("No movies found or DataFrame is empty.")
-
-
 if __name__ == "__main__":
     main()
 
