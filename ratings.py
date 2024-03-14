@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import urllib.parse
 import re  # Import regular expressions
+from PIL import Image
 
 st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬")
 
@@ -62,6 +63,7 @@ def fetch_imdb_info(title):
 
 def main():
     st.sidebar.header("Navigation")
+
     #page = st.sidebar.radio("Choose an option", ["Movie Ratings Leaderboard", "Select User"])
 
     if  "Movie Ratings Leaderboard":
@@ -80,8 +82,11 @@ def main():
         # Filter the dataframe based on the search query
         if search_query:
             df = df[df['Films van hoog naar laag beoordeeld'].str.contains(search_query, case=False, na=False)]
-
         df = df.dropna(subset=['Films van hoog naar laag beoordeeld', 'Rating'])
+        # Load and display an image in the sidebar
+        image_path = 'invivid.jpg'  # Path to your local image file
+        image = Image.open(image_path)
+        st.sidebar.image(image, caption='InVivid', use_column_width=True)
 
         if not df.empty:
             with st.container():
