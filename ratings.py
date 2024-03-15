@@ -32,35 +32,44 @@ def get_color(rating):
 def fetch_imdb_info(title):
     imdb = IMDB()
     try:
-        results = imdb.search(title)
-        if isinstance(results, str):
-            results = json.loads(results)
-        if not isinstance(results, dict):
-            return {"error": "Response is not in expected dictionary format."}
-        result_count = results.get("result_count", 0)
-        search_results = results.get("results", [])
-        if result_count > 0 and search_results:
-            first_result = search_results[0]
-            # Extract year from the title
-            match = re.search(r'\b(\d{4})\b', first_result.get('name', ''))
+        # First, search for the movie to get basic info
+        search_results = imdb.search(title)
+        if isinstance(search_results, str):
+            search_results = json.loads(search_results)
+        if not isinstance(search_results, dict):
+            return {"error": "Response from search is not in expected dictionary format."}
+
+        search_result_count = search_results.get("result_count", 0)
+        search_results_list = search_results.get("results", [])
+        if search_result_count > 0 and search_results_list:
+            first_search_result = search_results_list[0]
+            # Use get_by_name for more detailed information including the description
+            detailed_result = imdb.get_by_name(title, tv=False)
+            if isinstance(detailed_result, str):
+                detailed_result = json.loads(detailed_result)
+            if not isinstance(detailed_result, dict):
+                return {"error": "Response from get_by_name is not in expected dictionary format."}
+
+            # Extract year, title, and cast from the search result
+            match = re.search(r'\b(\d{4})\b', first_search_result.get('name', ''))
             year = match.group(1) if match else None
-            # Assuming the format is "Title Year Cast", split the string
-            parts = first_result.get('name', '').split(str(year))
+            parts = first_search_result.get('name', '').split(str(year))
             title = parts[0].strip() if parts else 'N/A'
             cast = parts[1].strip() if len(parts) > 1 else 'N/A'
-            # Return movie info along with extracted year and cast
+
+            # Return combined info
             return {
                 "name": title,
                 "year": year,
                 "cast": cast,
-                "url": first_result.get('url', 'N/A'),
-                "poster": first_result.get('poster', 'N/A')
+                "url": first_search_result.get('url', 'N/A'),
+                "poster": first_search_result.get('poster', 'N/A'),
+                "description": detailed_result.get('description', 'N/A')  # Description from detailed result
             }
         else:
             return {"error": "No results found or results list is empty."}
     except Exception as e:
         return {"error": f"Error fetching IMDb info: {e}"}
-
 def main():
     st.sidebar.header("Navigation")
 
@@ -119,7 +128,7 @@ def main():
                                 # Display the name, year, and cast
                                 st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
                                 st.write(f"Cast: {movie_info.get('cast', 'N/A')}")
-
+                                st.write(f"Description: {movie_info.get('description', 'N/A')}")
                                 # Normalize the movie name and generate the movie link URL
                                 movie_name_normalized = urllib.parse.quote(
                                     movie_info.get('name').lower().replace(" ", "-"))
