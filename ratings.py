@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
-from PyMovieDb import IMDB
+from PyMovieDb import IMDB as PyMovieDb_IMDB
+from imdbmovies import IMDB as ImdbMovies_IMDB
 import json
 import pandas as pd
 import urllib.parse
@@ -31,7 +32,8 @@ def get_color(rating):
     return color
 
 def fetch_imdb_info(title):
-    imdb = IMDB()
+    imdb = PyMovieDb_IMDB()
+    imdb2 = ImdbMovies_IMDB()
     try:
         # First, search for the movie to get basic info
         search_results = imdb.search(title)
@@ -45,7 +47,7 @@ def fetch_imdb_info(title):
         if search_result_count > 0 and search_results_list:
             first_search_result = search_results_list[0]
             # Use get_by_name for more detailed information including the description
-            detailed_result = imdb.get_by_name(title, tv=False)
+            detailed_result = imdb2.get_by_name(title, tv=False)  # Use imdb2 for description
             if isinstance(detailed_result, str):
                 detailed_result = json.loads(detailed_result)
             if not isinstance(detailed_result, dict):
@@ -57,10 +59,9 @@ def fetch_imdb_info(title):
             parts = first_search_result.get('name', '').split(str(year))
             title = parts[0].strip() if parts else 'N/A'
             cast = parts[1].strip() if len(parts) > 1 else 'N/A'
-
+            description = detailed_result.get('description', 'N/A')
             # Fetch movie poster
-            poster_link = mp.get_poster(title=title)
-            # Fetch director information
+            poster = mp.get_poster(title=title)
             director = detailed_result.get('director', [])
             director_name = director[0]['name'] if director else 'N/A'
 
@@ -71,8 +72,8 @@ def fetch_imdb_info(title):
                 "cast": cast,
                 "director": director_name,
                 "url": first_search_result.get('url', 'N/A'),
-                "poster": poster_link,
-                "description": detailed_result.get('description', 'N/A')  # Description from detailed result
+                "poster": poster,
+                "description": description
             }
         else:
             return {"error": "No results found or results list is empty."}
@@ -138,7 +139,7 @@ def main():
                                 else:
                                     st.write("Poster not available")
                                 with col2:
-                                    st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
+                                    st.write(f"***Release Year:*** {movie_info.get('year', 'N/A')}")
                                     st.write(f"***Director:*** {movie_info.get('director', 'N/A')}")
                                     st.write(f"***Cast:*** {movie_info.get('cast', 'N/A')}")
                                     st.write(f"***Description:*** {movie_info.get('description', 'N/A')}")
