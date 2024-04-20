@@ -6,6 +6,7 @@ import pandas as pd
 import urllib.parse
 import re  # Import regular expressions
 from PIL import Image
+import movieposters as mp
 
 st.set_page_config(page_title="InVivid Movie Ratings Leaderboard", page_icon="🎬")
 
@@ -57,13 +58,20 @@ def fetch_imdb_info(title):
             title = parts[0].strip() if parts else 'N/A'
             cast = parts[1].strip() if len(parts) > 1 else 'N/A'
 
+            # Fetch movie poster
+            poster_link = mp.get_poster(title=title)
+            # Fetch director information
+            director = detailed_result.get('director', [])
+            director_name = director[0]['name'] if director else 'N/A'
+
             # Return combined info
             return {
                 "name": title,
                 "year": year,
                 "cast": cast,
+                "director": director_name,
                 "url": first_search_result.get('url', 'N/A'),
-                "poster": first_search_result.get('poster', 'N/A'),
+                "poster": poster_link,
                 "description": detailed_result.get('description', 'N/A')  # Description from detailed result
             }
         else:
@@ -123,12 +131,18 @@ def main():
                     if imdb_button:
                         movie_info = fetch_imdb_info(film)
                         if "error" not in movie_info:
-                            col1, col2, col3 = st.columns([1, 1, 1])
-                            with col2:
-                                # Display the name, year, and cast
-                                st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
-                                st.write(f"Cast: {movie_info.get('cast', 'N/A')}")
-                                st.write(f"Description: {movie_info.get('description', 'N/A')}")
+                            col1, col2 = st.columns([1, 2])  # Adjusted column ratio
+                            with col1:
+                                if movie_info["poster"]:
+                                    st.image(movie_info["poster"], caption=film, use_column_width=True)
+                                else:
+                                    st.write("Poster not available")
+                                with col2:
+                                    st.write(f"**{movie_info.get('name', 'N/A')}** ({movie_info.get('year', 'N/A')})")
+                                    st.write(f"***Director:*** {movie_info.get('director', 'N/A')}")
+                                    st.write(f"***Cast:*** {movie_info.get('cast', 'N/A')}")
+                                    st.write(f"***Description:*** {movie_info.get('description', 'N/A')}")
+
                                 # Normalize the movie name and generate the movie link URL
                                 movie_name_normalized = urllib.parse.quote(
                                     movie_info.get('name').lower().replace(" ", "-"))
@@ -138,19 +152,9 @@ def main():
                                 # Use markdown to display IMDb and Watch Movie links side by side
                                 links_markdown = f"[IMDb URL]({movie_info.get('url', 'N/A')}) ‧ [Watch Movie]({movie_link_url})"
                                 st.markdown(links_markdown, unsafe_allow_html=True)
-
-                            with col1:
-                                st.image(movie_info.get('poster', ''), width=100)
                         else:
                             st.error(movie_info["error"])
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
