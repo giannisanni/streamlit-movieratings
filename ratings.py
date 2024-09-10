@@ -19,6 +19,7 @@ def load_movie_ratings():
     df = conn.read(worksheet="Ranglijst", ttl=0)
     return df
 
+
 def get_color(rating):
     if rating >= 9:
         color = "#00FF00"
@@ -78,97 +79,83 @@ def fetch_imdb_info(title):
             return {"error": "No results found or results list is empty."}
     except Exception as e:
         return {"error": f"Error fetching IMDb info: {e}"}
-
 def main():
-    st.sidebar.header("Search Filters")
+    st.sidebar.header("Navigation")
 
-    # Add search inputs in the sidebar
-    search_query = st.sidebar.text_input("Movie name", "")
-    search_director = st.sidebar.text_input("Director", "")
-    search_cast = st.sidebar.text_input("Cast", "")
-    search_year = st.sidebar.text_input("Release Year", "")
+    #page = st.sidebar.radio("Choose an option", ["Movie Ratings Leaderboard", "Select User"])
 
-    st.markdown("""
-        <h1 style='text-align: center;'>
-            <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
-        </h1>
-        <br>
-    """, unsafe_allow_html=True)
+    if  "Movie Ratings Leaderboard":
+        # Sidebar search functionality for the Movie Ratings Leaderboard
+        search_query = st.sidebar.text_input("Enter movie name", "")
 
-    df = load_movie_ratings()
+        st.markdown("""
+            <h1 style='text-align: center;'>
+                <a href="https://docs.google.com/spreadsheets/d/1qcncR1z4-GCXEVGFpOD-Sq0SFhf72JGvwJ6OMIWBhM8/edit#gid=0" target="_blank">InVivid Movie Ratings Leaderboard</a>
+            </h1>
+            <br>
+        """, unsafe_allow_html=True)
 
-    # Filter the dataframe based on the search query
-    if search_query:
-        df = df[df['Films van hoog naar laag beoordeeld'].str.contains(search_query, case=False, na=False)]
+        df = load_movie_ratings()
 
-    # Filter by director
-    if search_director:
-        df = df[df['Director'].str.contains(search_director, case=False, na=False)]
+        # Filter the dataframe based on the search query
+        if search_query:
+            df = df[df['Films van hoog naar laag beoordeeld'].str.contains(search_query, case=False, na=False)]
+        df = df.dropna(subset=['Films van hoog naar laag beoordeeld', 'Rating'])
+        # Load and display an image in the sidebar
+        image_path = 'invivid.jpg'  # Path to your local image file
+        image = Image.open(image_path)
+        st.sidebar.image(image, caption='InVivid', use_column_width=True)
 
-    # Filter by cast
-    if search_cast:
-        df = df[df['Cast'].str.contains(search_cast, case=False, na=False)]
+        if not df.empty:
+            with st.container():
+                for index, row in df.iterrows():
+                    film = row['Films van hoog naar laag beoordeeld']
+                    rating = row['Rating']
+                    formatted_rating = f"{rating:.2f}"
+                    color = get_color(rating)
 
-    # Filter by year
-    if search_year:
-        df = df[df['Year'].astype(str).str.contains(search_year, case=False, na=False)]
-
-    df = df.dropna(subset=['Films van hoog naar laag beoordeeld', 'Rating'])
-
-    # Load and display an image in the sidebar
-    image_path = 'invivid.jpg'  # Path to your local image file
-    image = Image.open(image_path)
-    st.sidebar.image(image, caption='InVivid', use_column_width=True)
-
-    if not df.empty:
-        with st.container():
-            for index, row in df.iterrows():
-                film = row['Films van hoog naar laag beoordeeld']
-                rating = row['Rating']
-                formatted_rating = f"{rating:.2f}"
-                color = get_color(rating)
-
-                if index < 3:
-                    ranking_display = ["🏆", "🥈", "🥉"][index]
-                elif index < 20:
-                    ranking_display = f"{index + 1}. 🌟"
-                else:
-                    ranking_display = f"{index + 1}."
-
-                col1, col2 = st.columns([1, 0.1], gap="small")
-                with col2:
-                    imdb_button = st.button("ℹ️", key=f"imdb_{index}")
-                with col1:
-                    st.markdown(
-                        f"{ranking_display} **{film}** with a rating of <span style='color: {color};'>{formatted_rating}</span>",
-                        unsafe_allow_html=True)
-
-                if imdb_button:
-                    movie_info = fetch_imdb_info(film)
-                    if "error" not in movie_info:
-                        col1, col2 = st.columns([1, 2])  # Adjusted column ratio
-                        with col1:
-                            if movie_info["poster"]:
-                                st.image(movie_info["poster"], caption=film, use_column_width=True)
-                            else:
-                                st.write("Poster not available")
-                            with col2:
-                                st.write(f"***Release Year:*** {movie_info.get('year', 'N/A')}")
-                                st.write(f"***Director:*** {movie_info.get('director', 'N/A')}")
-                                st.write(f"***Cast:*** {movie_info.get('cast', 'N/A')}")
-                                st.write(f"***Description:*** {movie_info.get('description', 'N/A')}")
-
-                            # Normalize the movie name and generate the movie link URL
-                            movie_name_normalized = urllib.parse.quote(
-                                movie_info.get('name').lower().replace(" ", "-"))
-                            release_year = movie_info.get('year', '')
-                            movie_link_url = f"https://en.yts-official.org/movies/{movie_name_normalized}-{release_year}" if release_year else f"https://en.yts-official.org/movies/{movie_name_normalized}"
-
-                            # Use markdown to display IMDb and Watch Movie links side by side
-                            links_markdown = f"[IMDb URL]({movie_info.get('url', 'N/A')}) ‧ [Watch Movie]({movie_link_url})"
-                            st.markdown(links_markdown, unsafe_allow_html=True)
+                    if index < 3:
+                        ranking_display = ["🏆", "🥈", "🥉"][index]
+                    elif index < 20:
+                        ranking_display = f"{index + 1}. 🌟"
                     else:
-                        st.error(movie_info["error"])
+                        ranking_display = f"{index + 1}."
+
+                    col1, col2 = st.columns([1, 0.1], gap="small")
+                    with col2:
+                        imdb_button = st.button("ℹ️", key=f"imdb_{index}")
+                    with col1:
+                        st.markdown(
+                            f"{ranking_display} **{film}** with a rating of <span style='color: {color};'>{formatted_rating}</span>",
+                            unsafe_allow_html=True)
+
+                    if imdb_button:
+                        movie_info = fetch_imdb_info(film)
+                        if "error" not in movie_info:
+                            col1, col2 = st.columns([1, 2])  # Adjusted column ratio
+                            with col1:
+                                if movie_info["poster"]:
+                                    st.image(movie_info["poster"], caption=film, use_column_width=True)
+                                else:
+                                    st.write("Poster not available")
+                                with col2:
+                                    st.write(f"***Release Year:*** {movie_info.get('year', 'N/A')}")
+                                    st.write(f"***Director:*** {movie_info.get('director', 'N/A')}")
+                                    st.write(f"***Cast:*** {movie_info.get('cast', 'N/A')}")
+                                    st.write(f"***Description:*** {movie_info.get('description', 'N/A')}")
+
+                                # Normalize the movie name and generate the movie link URL
+                                movie_name_normalized = urllib.parse.quote(
+                                    movie_info.get('name').lower().replace(" ", "-"))
+                                release_year = movie_info.get('year', '')
+                                movie_link_url = f"https://en.yts-official.org/movies/{movie_name_normalized}-{release_year}" if release_year else f"https://en.yts-official.org/movies/{movie_name_normalized}"
+
+                                # Use markdown to display IMDb and Watch Movie links side by side
+                                links_markdown = f"[IMDb URL]({movie_info.get('url', 'N/A')}) ‧ [Watch Movie]({movie_link_url})"
+                                st.markdown(links_markdown, unsafe_allow_html=True)
+                        else:
+                            st.error(movie_info["error"])
+
 
 if __name__ == "__main__":
     main()
